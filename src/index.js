@@ -39,10 +39,12 @@ function cardEmbed(player, cardId, packType) {
       { name: "OVR", value: `**${player.rating}**`, inline: true },
       { name: "CARD ID", value: `#${cardId}`, inline: true },
       { name: "PACK", value: packNames[packType], inline: true },
-      { name: "⚽ Goals", value: String(player.goals ?? 0), inline: true },
-      { name: "🎯 Assists", value: String(player.assists ?? 0), inline: true },
-      { name: "🛡️ Tackles", value: String(player.tackles ?? 0), inline: true },
-      { name: "🧤 Saves", value: String(player.saves ?? 0), inline: true }
+      { name: "PAC", value: String(player.pac ?? 0), inline: true },
+      { name: "SHO", value: String(player.sho ?? 0), inline: true },
+      { name: "PAS", value: String(player.pas ?? 0), inline: true },
+      { name: "DRI", value: String(player.dri ?? 0), inline: true },
+      { name: "DEF", value: String(player.def ?? 0), inline: true },
+      { name: "PHY", value: String(player.phy ?? 0), inline: true }
     )
     .setFooter({ text: "MLS GURU • Collect the league" })
     .setTimestamp();
@@ -68,9 +70,9 @@ async function renderPlayerCard(player, cardId, packType) {
   ctx.fillStyle="#fff";ctx.textAlign="left";ctx.shadowColor="#000";ctx.shadowBlur=14;ctx.font="bold 112px Arial";ctx.fillText(String(player.rating),115,875);
   ctx.font="bold 42px Arial";ctx.fillText(String(player.position).toUpperCase(),120,925);ctx.font="bold 62px Arial";ctx.fillText(String(player.name).toUpperCase().slice(0,18),115,995);
   ctx.font="32px Arial";ctx.fillText(String(player.club).toUpperCase().slice(0,30),120,1040);ctx.textAlign="right";ctx.font="bold 30px Arial";ctx.fillStyle=pair[1];ctx.fillText("MLS GURU",790,95);
-  ctx.shadowBlur=0;ctx.font="22px Arial";ctx.fillStyle="#fff";ctx.textAlign="center";ctx.font="bold 25px Arial";ctx.fillStyle=pair[1];ctx.fillText("PLAYER STATS",450,1110);
-  const statItems=[["GOALS",player.goals??0],["ASSISTS",player.assists??0],["TACKLES",player.tackles??0],["SAVES",player.saves??0]];
-  statItems.forEach((item,i)=>{const x=180+i*180;ctx.fillStyle="#fff";ctx.font="bold 36px Arial";ctx.fillText(String(item[1]),x,1170);ctx.fillStyle=pair[1];ctx.font="bold 20px Arial";ctx.fillText(item[0],x,1205);});
+  ctx.shadowBlur=0;ctx.font="22px Arial";ctx.fillStyle="#fff";ctx.textAlign="center";ctx.font="bold 25px Arial";ctx.fillStyle=pair[1];ctx.fillText("PLAYER ATTRIBUTES",450,1090);
+  const statItems=[["PAC",player.pac??0],["SHO",player.sho??0],["PAS",player.pas??0],["DRI",player.dri??0],["DEF",player.def??0],["PHY",player.phy??0]];
+  statItems.forEach((item,i)=>{const col=i%3,row=Math.floor(i/3),x=260+col*190,y=1150+row*75;ctx.fillStyle="#fff";ctx.font="bold 34px Arial";ctx.fillText(String(item[1]),x,y);ctx.fillStyle=pair[1];ctx.font="bold 20px Arial";ctx.fillText(item[0],x,y+27);});
   ctx.textAlign="right";ctx.font="22px Arial";ctx.fillStyle="#fff";ctx.fillText("#"+cardId+" • "+packNames[packType],790,1250);
   return canvas.toBuffer("image/png");
 }
@@ -148,7 +150,7 @@ client.on(Events.InteractionCreate, async interaction => {
       const user = ensureUser(interaction.user.id);
       const cards = statements.collection.all(interaction.user.id);
       if (!cards.length) return interaction.reply({ content: `Your collection is empty. Open a /pack to get started.\nCoins: **${user.coins}** • Free Normal packs: **${user.free_packs}**`, ephemeral: true });
-      const lines = cards.slice(0, 20).map(c => `**#${c.card_id}** • ${c.name} — ${c.rating} OVR • ${c.club} (${c.rarity})\n⚽ ${c.goals} G • 🎯 ${c.assists} A • 🛡️ ${c.tackles} T • 🧤 ${c.saves} S`);
+      const lines = cards.slice(0, 20).map(c => `**#${c.card_id}** • ${c.name} — ${c.rating} OVR • ${c.club} (${c.rarity})\nPAC ${c.pac} • SHO ${c.sho} • PAS ${c.pas} • DRI ${c.dri} • DEF ${c.def} • PHY ${c.phy}`);
       const embed = new EmbedBuilder().setColor(0x171c2e).setTitle(`⚽ ${interaction.user.globalName || interaction.user.username}'s MLS Guru Collection`)
         .setDescription(lines.join("\n"))
         .setFooter({ text: `${cards.length} cards • ${user.coins} coins • ${user.free_packs} free packs` });
@@ -190,11 +192,13 @@ client.on(Events.InteractionCreate, async interaction => {
       const rarity = interaction.options.getString("rarity", true);
       const image = interaction.options.getAttachment("image", true);
       if (!image.contentType?.startsWith("image/")) return interaction.reply({ content: "Please upload an image file (PNG, JPG, or WEBP).", ephemeral: true });
-      const goals = interaction.options.getInteger("goals") ?? 0;
-      const assists = interaction.options.getInteger("assists") ?? 0;
-      const tackles = interaction.options.getInteger("tackles") ?? 0;
-      const saves = interaction.options.getInteger("saves") ?? 0;
-      const result = statements.addPlayer.run(member.id, name, club, position, rating, rarity, image.url, goals, assists, tackles, saves, now);
+      const pac = interaction.options.getInteger("pac") ?? 0;
+      const sho = interaction.options.getInteger("sho") ?? 0;
+      const pas = interaction.options.getInteger("pas") ?? 0;
+      const dri = interaction.options.getInteger("dri") ?? 0;
+      const def = interaction.options.getInteger("def") ?? 0;
+      const phy = interaction.options.getInteger("phy") ?? 0;
+      const result = statements.addPlayer.run(member.id, name, club, position, rating, rarity, image.url, pac, sho, pas, dri, def, phy, now);
       return interaction.reply(`✅ Added **${name}** — ${club} • ${position} • **${rating} OVR** (${rarity}) with their photo. Player ID: **#${result.lastInsertRowid}**.`);
     }
     if (command === "editplayer") {
@@ -205,10 +209,12 @@ client.on(Events.InteractionCreate, async interaction => {
         interaction.options.getString("rarity"),
         interaction.options.getString("club"),
         interaction.options.getString("position"),
-        interaction.options.getInteger("goals"),
-        interaction.options.getInteger("assists"),
-        interaction.options.getInteger("tackles"),
-        interaction.options.getInteger("saves"),
+        interaction.options.getInteger("pac"),
+        interaction.options.getInteger("sho"),
+        interaction.options.getInteger("pas"),
+        interaction.options.getInteger("dri"),
+        interaction.options.getInteger("def"),
+        interaction.options.getInteger("phy"),
         id
       );
       return interaction.reply(result.changes ? `✅ Updated player **#${id}**.` : "No changes were made.");
