@@ -38,7 +38,11 @@ function cardEmbed(player, cardId, packType) {
     .addFields(
       { name: "OVR", value: `**${player.rating}**`, inline: true },
       { name: "CARD ID", value: `#${cardId}`, inline: true },
-      { name: "PACK", value: packNames[packType], inline: true }
+      { name: "PACK", value: packNames[packType], inline: true },
+      { name: "⚽ Goals", value: String(player.goals ?? 0), inline: true },
+      { name: "🎯 Assists", value: String(player.assists ?? 0), inline: true },
+      { name: "🛡️ Tackles", value: String(player.tackles ?? 0), inline: true },
+      { name: "🧤 Saves", value: String(player.saves ?? 0), inline: true }
     )
     .setFooter({ text: "MLS GURU • Collect the league" })
     .setTimestamp();
@@ -53,18 +57,21 @@ function drawCover(ctx, image, x, y, w, h) {
   ctx.drawImage(image, (image.width-sw)/2, (image.height-sh)/2, sw, sh, x, y, w, h);
 }
 async function renderPlayerCard(player, cardId, packType) {
-  const canvas=createCanvas(900,1200),ctx=canvas.getContext("2d");
+  const canvas=createCanvas(900,1300),ctx=canvas.getContext("2d");
   const colors={bronze:["#60391f","#d9a06c"],silver:["#3e4a56","#dce5ed"],gold:["#684900","#ffe38b"],special:["#26135b","#b99aff"],promo:["#064d55","#59f2df"]},pair=colors[player.rarity]||colors.bronze;
-  const bg=ctx.createLinearGradient(0,0,900,1200);bg.addColorStop(0,pair[0]);bg.addColorStop(1,pair[1]);ctx.fillStyle=bg;ctx.fillRect(0,0,900,1200);
-  ctx.fillStyle="rgba(5,9,20,.78)";ctx.fillRect(45,45,810,1110);
+  const bg=ctx.createLinearGradient(0,0,900,1200);bg.addColorStop(0,pair[0]);bg.addColorStop(1,pair[1]);ctx.fillStyle=bg;ctx.fillRect(0,0,900,1300);
+  ctx.fillStyle="rgba(5,9,20,.78)";ctx.fillRect(45,45,810,1210);
   const photo=await loadPlayerPhoto(player);
-  if(photo){ctx.save();ctx.beginPath();ctx.roundRect(90,110,720,730,28);ctx.clip();drawCover(ctx,photo,90,110,720,730);ctx.restore();}
-  else{ctx.fillStyle="#fff";ctx.font="bold 48px Arial";ctx.textAlign="center";ctx.fillText("PLAYER PHOTO",450,470);}
-  const shade=ctx.createLinearGradient(0,700,0,900);shade.addColorStop(0,"rgba(0,0,0,0)");shade.addColorStop(1,"rgba(0,0,0,.95)");ctx.fillStyle=shade;ctx.fillRect(90,690,720,210);
-  ctx.fillStyle="#fff";ctx.textAlign="left";ctx.shadowColor="#000";ctx.shadowBlur=14;ctx.font="bold 112px Arial";ctx.fillText(String(player.rating),115,970);
-  ctx.font="bold 42px Arial";ctx.fillText(String(player.position).toUpperCase(),120,1025);ctx.font="bold 62px Arial";ctx.fillText(String(player.name).toUpperCase().slice(0,18),115,1090);
-  ctx.font="32px Arial";ctx.fillText(String(player.club).toUpperCase().slice(0,30),120,1135);ctx.textAlign="right";ctx.font="bold 30px Arial";ctx.fillStyle=pair[1];ctx.fillText("MLS GURU",790,95);
-  ctx.shadowBlur=0;ctx.font="22px Arial";ctx.fillStyle="#fff";ctx.fillText("#"+cardId+" • "+packNames[packType],790,1160);
+  if(photo){ctx.save();ctx.beginPath();ctx.roundRect(90,100,720,650,28);ctx.clip();drawCover(ctx,photo,90,100,720,650);ctx.restore();}
+  else{ctx.fillStyle="#fff";ctx.font="bold 48px Arial";ctx.textAlign="center";ctx.fillText("PLAYER PHOTO",450,430);}
+  const shade=ctx.createLinearGradient(0,650,0,820);shade.addColorStop(0,"rgba(0,0,0,0)");shade.addColorStop(1,"rgba(0,0,0,.95)");ctx.fillStyle=shade;ctx.fillRect(90,650,720,170);
+  ctx.fillStyle="#fff";ctx.textAlign="left";ctx.shadowColor="#000";ctx.shadowBlur=14;ctx.font="bold 112px Arial";ctx.fillText(String(player.rating),115,875);
+  ctx.font="bold 42px Arial";ctx.fillText(String(player.position).toUpperCase(),120,925);ctx.font="bold 62px Arial";ctx.fillText(String(player.name).toUpperCase().slice(0,18),115,995);
+  ctx.font="32px Arial";ctx.fillText(String(player.club).toUpperCase().slice(0,30),120,1040);ctx.textAlign="right";ctx.font="bold 30px Arial";ctx.fillStyle=pair[1];ctx.fillText("MLS GURU",790,95);
+  ctx.shadowBlur=0;ctx.font="22px Arial";ctx.fillStyle="#fff";ctx.textAlign="center";ctx.font="bold 25px Arial";ctx.fillStyle=pair[1];ctx.fillText("PLAYER STATS",450,1110);
+  const statItems=[["GOALS",player.goals??0],["ASSISTS",player.assists??0],["TACKLES",player.tackles??0],["SAVES",player.saves??0]];
+  statItems.forEach((item,i)=>{const x=180+i*180;ctx.fillStyle="#fff";ctx.font="bold 36px Arial";ctx.fillText(String(item[1]),x,1170);ctx.fillStyle=pair[1];ctx.font="bold 20px Arial";ctx.fillText(item[0],x,1205);});
+  ctx.textAlign="right";ctx.font="22px Arial";ctx.fillStyle="#fff";ctx.fillText("#"+cardId+" • "+packNames[packType],790,1250);
   return canvas.toBuffer("image/png");
 }
 async function renderWalkoutGif(player) {
@@ -141,7 +148,7 @@ client.on(Events.InteractionCreate, async interaction => {
       const user = ensureUser(interaction.user.id);
       const cards = statements.collection.all(interaction.user.id);
       if (!cards.length) return interaction.reply({ content: `Your collection is empty. Open a /pack to get started.\nCoins: **${user.coins}** • Free Normal packs: **${user.free_packs}**`, ephemeral: true });
-      const lines = cards.slice(0, 20).map(c => `**#${c.card_id}** • ${c.name} — ${c.rating} OVR • ${c.club} (${c.rarity})`);
+      const lines = cards.slice(0, 20).map(c => `**#${c.card_id}** • ${c.name} — ${c.rating} OVR • ${c.club} (${c.rarity})\n⚽ ${c.goals} G • 🎯 ${c.assists} A • 🛡️ ${c.tackles} T • 🧤 ${c.saves} S`);
       const embed = new EmbedBuilder().setColor(0x171c2e).setTitle(`⚽ ${interaction.user.globalName || interaction.user.username}'s MLS Guru Collection`)
         .setDescription(lines.join("\n"))
         .setFooter({ text: `${cards.length} cards • ${user.coins} coins • ${user.free_packs} free packs` });
@@ -160,8 +167,16 @@ client.on(Events.InteractionCreate, async interaction => {
       const embed = new EmbedBuilder().setColor(0x171c2e).setTitle("🏆 MLS GURU COLLECTORS").setDescription(lines.join("\n"));
       return interaction.reply({ embeds: [embed] });
     }
-    if (["addplayer", "editplayer", "removeplayer"].includes(command) && !isAdmin(interaction)) return adminDenied(interaction);
+    if (["addcoins", "addplayer", "editplayer", "removeplayer"].includes(command) && !isAdmin(interaction)) return adminDenied(interaction);
 
+    if (command === "addcoins") {
+      const target = interaction.options.getUser("user", true);
+      const amount = interaction.options.getInteger("amount", true);
+      ensureUser(target.id);
+      statements.addCoins.run(amount, target.id);
+      const balance = statements.getUser.get(target.id).coins;
+      return interaction.reply({ content: `🪙 Added **${amount.toLocaleString()} coins** to <@${target.id}>. New balance: **${balance.toLocaleString()} coins**.`, ephemeral: true });
+    }
     if (command === "addplayer") {
       const member = interaction.options.getUser("user", true);
       const consent = statements.getConsent.get(member.id);
@@ -175,7 +190,11 @@ client.on(Events.InteractionCreate, async interaction => {
       const rarity = interaction.options.getString("rarity", true);
       const image = interaction.options.getAttachment("image", true);
       if (!image.contentType?.startsWith("image/")) return interaction.reply({ content: "Please upload an image file (PNG, JPG, or WEBP).", ephemeral: true });
-      const result = statements.addPlayer.run(member.id, name, club, position, rating, rarity, image.url, now);
+      const goals = interaction.options.getInteger("goals") ?? 0;
+      const assists = interaction.options.getInteger("assists") ?? 0;
+      const tackles = interaction.options.getInteger("tackles") ?? 0;
+      const saves = interaction.options.getInteger("saves") ?? 0;
+      const result = statements.addPlayer.run(member.id, name, club, position, rating, rarity, image.url, goals, assists, tackles, saves, now);
       return interaction.reply(`✅ Added **${name}** — ${club} • ${position} • **${rating} OVR** (${rarity}) with their photo. Player ID: **#${result.lastInsertRowid}**.`);
     }
     if (command === "editplayer") {
@@ -186,6 +205,10 @@ client.on(Events.InteractionCreate, async interaction => {
         interaction.options.getString("rarity"),
         interaction.options.getString("club"),
         interaction.options.getString("position"),
+        interaction.options.getInteger("goals"),
+        interaction.options.getInteger("assists"),
+        interaction.options.getInteger("tackles"),
+        interaction.options.getInteger("saves"),
         id
       );
       return interaction.reply(result.changes ? `✅ Updated player **#${id}**.` : "No changes were made.");
