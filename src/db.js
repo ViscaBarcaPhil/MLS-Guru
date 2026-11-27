@@ -33,10 +33,12 @@ db.exec(`
     rating INTEGER NOT NULL CHECK (rating BETWEEN 60 AND 99),
     rarity TEXT NOT NULL DEFAULT 'bronze',
     image_url TEXT,
-    goals INTEGER NOT NULL DEFAULT 0,
-    assists INTEGER NOT NULL DEFAULT 0,
-    tackles INTEGER NOT NULL DEFAULT 0,
-    saves INTEGER NOT NULL DEFAULT 0,
+    pac INTEGER NOT NULL DEFAULT 0,
+    sho INTEGER NOT NULL DEFAULT 0,
+    pas INTEGER NOT NULL DEFAULT 0,
+    dri INTEGER NOT NULL DEFAULT 0,
+    def INTEGER NOT NULL DEFAULT 0,
+    phy INTEGER NOT NULL DEFAULT 0,
     active INTEGER NOT NULL DEFAULT 1,
     created_at INTEGER NOT NULL,
     FOREIGN KEY (discord_user_id) REFERENCES consents(user_id) ON DELETE CASCADE
@@ -56,7 +58,7 @@ db.exec(`
 
 const playerColumns = db.prepare("PRAGMA table_info(players)").all().map(column => column.name);
 if (!playerColumns.includes("image_url")) db.exec("ALTER TABLE players ADD COLUMN image_url TEXT");
-for (const stat of ["goals", "assists", "tackles", "saves"]) {
+for (const stat of ["pac", "sho", "pas", "dri", "def", "phy"]) {
   if (!playerColumns.includes(stat)) db.exec(`ALTER TABLE players ADD COLUMN ${stat} INTEGER NOT NULL DEFAULT 0`);
 }
 
@@ -70,13 +72,13 @@ const statements = {
   useFreePack: db.prepare("UPDATE users SET free_packs = free_packs - 1 WHERE user_id = ? AND free_packs > 0"),
   consent: db.prepare("INSERT INTO consents (user_id, display_name, consented_at) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET display_name = excluded.display_name, consented_at = excluded.consented_at"),
   getConsent: db.prepare("SELECT * FROM consents WHERE user_id = ?"),
-  addPlayer: db.prepare("INSERT INTO players (discord_user_id, name, club, position, rating, rarity, image_url, goals, assists, tackles, saves, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"),
+  addPlayer: db.prepare("INSERT INTO players (discord_user_id, name, club, position, rating, rarity, image_url, pac, sho, pas, dri, def, phy, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"),
   getPlayer: db.prepare("SELECT * FROM players WHERE id = ? AND active = 1"),
-  updatePlayer: db.prepare("UPDATE players SET rating = COALESCE(?, rating), rarity = COALESCE(?, rarity), club = COALESCE(?, club), position = COALESCE(?, position), goals = COALESCE(?, goals), assists = COALESCE(?, assists), tackles = COALESCE(?, tackles), saves = COALESCE(?, saves) WHERE id = ? AND active = 1"),
+  updatePlayer: db.prepare("UPDATE players SET rating = COALESCE(?, rating), rarity = COALESCE(?, rarity), club = COALESCE(?, club), position = COALESCE(?, position), pac = COALESCE(?, pac), sho = COALESCE(?, sho), pas = COALESCE(?, pas), dri = COALESCE(?, dri), def = COALESCE(?, def), phy = COALESCE(?, phy) WHERE id = ? AND active = 1"),
   removePlayer: db.prepare("DELETE FROM players WHERE id = ?"),
   players: db.prepare("SELECT * FROM players WHERE active = 1 ORDER BY rating DESC"),
   addCard: db.prepare("INSERT INTO cards (owner_id, player_id, acquired_at) VALUES (?, ?, ?)"),
-  collection: db.prepare("SELECT c.id AS card_id, p.id AS player_id, p.name, p.club, p.position, p.rating, p.rarity, p.goals, p.assists, p.tackles, p.saves, c.acquired_at FROM cards c JOIN players p ON p.id = c.player_id WHERE c.owner_id = ? ORDER BY p.rating DESC, c.acquired_at DESC"),
+  collection: db.prepare("SELECT c.id AS card_id, p.id AS player_id, p.name, p.club, p.position, p.rating, p.rarity, p.pac, p.sho, p.pas, p.dri, p.def, p.phy, c.acquired_at FROM cards c JOIN players p ON p.id = c.player_id WHERE c.owner_id = ? ORDER BY p.rating DESC, c.acquired_at DESC"),
   getCard: db.prepare("SELECT c.id AS card_id, p.rating FROM cards c JOIN players p ON p.id = c.player_id WHERE c.id = ? AND c.owner_id = ?"),
   deleteCard: db.prepare("DELETE FROM cards WHERE id = ? AND owner_id = ?"),
   leaderboard: db.prepare("SELECT u.user_id, u.coins, COUNT(c.id) AS card_count, COALESCE(MAX(p.rating), 0) AS best_rating FROM users u LEFT JOIN cards c ON c.owner_id = u.user_id LEFT JOIN players p ON p.id = c.player_id GROUP BY u.user_id ORDER BY card_count DESC, best_rating DESC, coins DESC LIMIT 10")
