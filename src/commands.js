@@ -6,10 +6,12 @@ const rarityChoices = [
 ];
 function addStats(command) {
   return command
-    .addIntegerOption(o => o.setName("goals").setDescription("Goals").setMinValue(0).setMaxValue(9999))
-    .addIntegerOption(o => o.setName("assists").setDescription("Assists").setMinValue(0).setMaxValue(9999))
-    .addIntegerOption(o => o.setName("tackles").setDescription("Tackles").setMinValue(0).setMaxValue(9999))
-    .addIntegerOption(o => o.setName("saves").setDescription("Saves").setMinValue(0).setMaxValue(9999));
+    .addIntegerOption(o => o.setName("pac").setDescription("Pace (PAC)").setMinValue(0).setMaxValue(99))
+    .addIntegerOption(o => o.setName("sho").setDescription("Shooting (SHO)").setMinValue(0).setMaxValue(99))
+    .addIntegerOption(o => o.setName("pas").setDescription("Passing (PAS)").setMinValue(0).setMaxValue(99))
+    .addIntegerOption(o => o.setName("dri").setDescription("Dribbling (DRI)").setMinValue(0).setMaxValue(99))
+    .addIntegerOption(o => o.setName("def").setDescription("Defending (DEF)").setMinValue(0).setMaxValue(99))
+    .addIntegerOption(o => o.setName("phy").setDescription("Physicality (PHY)").setMinValue(0).setMaxValue(99));
 }
 const addPlayer = addStats(new SlashCommandBuilder().setName("addplayer").setDescription("Admin: add a consenting player card with photo and stats.")
   .addUserOption(o => o.setName("user").setDescription("Discord member who used /consent").setRequired(true))
