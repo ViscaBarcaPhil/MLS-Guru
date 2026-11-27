@@ -23,6 +23,7 @@ const commands = [
     .addStringOption(o => o.setName("club").setDescription("MLS league club").setRequired(true).setMaxLength(40))
     .addStringOption(o => o.setName("position").setDescription("Player position").setRequired(true).setMaxLength(20))
     .addIntegerOption(o => o.setName("rating").setDescription("Overall rating (60–99)").setRequired(true).setMinValue(60).setMaxValue(99))
+    .addAttachmentOption(o => o.setName("image").setDescription("Upload the player photo for their custom card").setRequired(true))
     .addStringOption(o => o.setName("rarity").setDescription("Card rarity").setRequired(true).addChoices(
       { name: "Bronze", value: "bronze" }, { name: "Silver", value: "silver" },
       { name: "Gold", value: "gold" }, { name: "Special", value: "special" }, { name: "Promo", value: "promo" }
