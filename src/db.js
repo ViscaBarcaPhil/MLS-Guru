@@ -32,6 +32,7 @@ db.exec(`
     position TEXT NOT NULL,
     rating INTEGER NOT NULL CHECK (rating BETWEEN 60 AND 99),
     rarity TEXT NOT NULL DEFAULT 'bronze',
+    image_url TEXT,
     active INTEGER NOT NULL DEFAULT 1,
     created_at INTEGER NOT NULL,
     FOREIGN KEY (discord_user_id) REFERENCES consents(user_id) ON DELETE CASCADE
@@ -49,6 +50,9 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_players_active ON players(active);
 `);
 
+const playerColumns = db.prepare("PRAGMA table_info(players)").all().map(column => column.name);
+if (!playerColumns.includes("image_url")) db.exec("ALTER TABLE players ADD COLUMN image_url TEXT");
+
 const statements = {
   ensureUser: db.prepare("INSERT OR IGNORE INTO users (user_id) VALUES (?)"),
   getUser: db.prepare("SELECT * FROM users WHERE user_id = ?"),
@@ -59,7 +63,7 @@ const statements = {
   useFreePack: db.prepare("UPDATE users SET free_packs = free_packs - 1 WHERE user_id = ? AND free_packs > 0"),
   consent: db.prepare("INSERT INTO consents (user_id, display_name, consented_at) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET display_name = excluded.display_name, consented_at = excluded.consented_at"),
   getConsent: db.prepare("SELECT * FROM consents WHERE user_id = ?"),
-  addPlayer: db.prepare("INSERT INTO players (discord_user_id, name, club, position, rating, rarity, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)"),
+  addPlayer: db.prepare("INSERT INTO players (discord_user_id, name, club, position, rating, rarity, image_url, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"),
   getPlayer: db.prepare("SELECT * FROM players WHERE id = ? AND active = 1"),
   updatePlayer: db.prepare("UPDATE players SET rating = COALESCE(?, rating), rarity = COALESCE(?, rarity), club = COALESCE(?, club), position = COALESCE(?, position) WHERE id = ? AND active = 1"),
   removePlayer: db.prepare("DELETE FROM players WHERE id = ?"),
