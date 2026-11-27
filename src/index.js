@@ -84,7 +84,52 @@ client.on(Events.InteractionCreate, async interaction => {
       if (!result.ok && result.reason === "empty") return interaction.reply({ content: "There aren't any eligible opted-in players in this pack pool yet. Ask players to use /consent, then an admin can add their cards.", ephemeral: true });
       if (!result.ok && result.reason === "coins") return interaction.reply({ content: `You need **${result.cost} coins** for this pack, but you only have **${result.balance}**. Use /daily or /work.`, ephemeral: true });
       const prefix = result.usedFree ? "🎟️ Your free daily pack!" : `🪙 You spent ${prices[type]} coins.`;
-      return interaction.reply({ content: prefix, embeds: [cardEmbed(result.player, result.cardId, type)] });
+      const player = result.player;
+      const isWalkout = player.rating >= 86;
+      const isBoard = player.rating >= 83 && player.rating <= 85;
+
+      await interaction.deferReply();
+
+      const tunnel = new EmbedBuilder()
+        .setColor(0x101522)
+        .setTitle("🌑 MLS GURU • PACK OPENING")
+        .setDescription("**THE STADIUM IS LIGHTING UP...**\n\n▰ ▰ ▰ ▱ ▱ ▱ ▱\n\n*Something is coming out of the tunnel.*")
+        .setFooter({ text: prefix });
+      await interaction.editReply({ embeds: [tunnel] });
+      await new Promise(resolve => setTimeout(resolve, 1100));
+
+      if (isWalkout || isBoard) {
+        const revealType = isWalkout ? "🚨 WALKOUT INCOMING" : "✨ BOARDS!";
+        const lights = new EmbedBuilder()
+          .setColor(isWalkout ? 0xf0b429 : 0x9aa7b2)
+          .setTitle(revealType)
+          .setDescription(`**THE LIGHTS ARE ON...**\n\n👤\n\n**${player.position.toUpperCase()}**\n\n▰ ▰ ▰ ▰ ▰ ▱ ▱\n\n*The player is walking out...*`)
+          .setFooter({ text: "MLS GURU • Get ready for the reveal" });
+        await interaction.editReply({ embeds: [lights] });
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
+        const walkout = new EmbedBuilder()
+          .setColor(isWalkout ? 0xf0b429 : 0x9aa7b2)
+          .setTitle(isWalkout ? "🔥 WALKOUT!" : "✨ BOARD PLAYER!")
+          .setDescription(`# **${player.rating} OVR**\n\n**${player.name.toUpperCase()}**\n${player.club} • ${player.position}\n\n🎆 🎇 🎆`)
+          .setFooter({ text: "MLS GURU • THE WALKOUT" });
+        await interaction.editReply({ embeds: [walkout] });
+        await new Promise(resolve => setTimeout(resolve, 1300));
+      } else {
+        const silhouette = new EmbedBuilder()
+          .setColor(0x9b6a43)
+          .setTitle("👤 PLAYER REVEAL")
+          .setDescription("**A PLAYER IS EMERGING...**\n\n▰ ▰ ▰ ▰ ▱ ▱ ▱")
+          .setFooter({ text: "MLS GURU • Pack opening" });
+        await interaction.editReply({ embeds: [silhouette] });
+        await new Promise(resolve => setTimeout(resolve, 900));
+      }
+
+      await interaction.editReply({
+        content: prefix,
+        embeds: [cardEmbed(player, result.cardId, type)]
+      });
+      return;
     }
     if (command === "collection") {
       const user = ensureUser(interaction.user.id);
