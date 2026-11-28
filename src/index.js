@@ -59,21 +59,88 @@ function drawCover(ctx, image, x, y, w, h) {
   ctx.drawImage(image, (image.width-sw)/2, (image.height-sh)/2, sw, sh, x, y, w, h);
 }
 async function renderPlayerCard(player, cardId, packType) {
-  const canvas=createCanvas(900,1300),ctx=canvas.getContext("2d");
-  const colors={bronze:["#60391f","#d9a06c"],silver:["#3e4a56","#dce5ed"],gold:["#684900","#ffe38b"],special:["#26135b","#b99aff"],promo:["#064d55","#59f2df"]},pair=colors[player.rarity]||colors.bronze;
-  const bg=ctx.createLinearGradient(0,0,900,1200);bg.addColorStop(0,pair[0]);bg.addColorStop(1,pair[1]);ctx.fillStyle=bg;ctx.fillRect(0,0,900,1300);
-  ctx.fillStyle="rgba(5,9,20,.78)";ctx.fillRect(45,45,810,1210);
-  const photo=await loadPlayerPhoto(player);
-  if(photo){ctx.save();ctx.beginPath();ctx.roundRect(90,100,720,650,28);ctx.clip();drawCover(ctx,photo,90,100,720,650);ctx.restore();}
-  else{ctx.fillStyle="#fff";ctx.font="bold 48px Arial";ctx.textAlign="center";ctx.fillText("PLAYER PHOTO",450,430);}
-  const shade=ctx.createLinearGradient(0,650,0,820);shade.addColorStop(0,"rgba(0,0,0,0)");shade.addColorStop(1,"rgba(0,0,0,.95)");ctx.fillStyle=shade;ctx.fillRect(90,650,720,170);
-  ctx.fillStyle="#fff";ctx.textAlign="left";ctx.shadowColor="#000";ctx.shadowBlur=14;ctx.font="bold 112px Arial";ctx.fillText(String(player.rating),115,875);
-  ctx.font="bold 42px Arial";ctx.fillText(String(player.position).toUpperCase(),120,925);ctx.font="bold 62px Arial";ctx.fillText(String(player.name).toUpperCase().slice(0,18),115,995);
-  ctx.font="32px Arial";ctx.fillText(String(player.club).toUpperCase().slice(0,30),120,1040);ctx.textAlign="right";ctx.font="bold 30px Arial";ctx.fillStyle=pair[1];ctx.fillText("MLS GURU",790,95);
-  ctx.shadowBlur=0;ctx.font="22px Arial";ctx.fillStyle="#fff";ctx.textAlign="center";ctx.font="bold 25px Arial";ctx.fillStyle=pair[1];ctx.fillText("PLAYER ATTRIBUTES",450,1090);
-  const statItems=[["PAC",player.pac??0],["SHO",player.sho??0],["PAS",player.pas??0],["DRI",player.dri??0],["DEF",player.def??0],["PHY",player.phy??0]];
-  statItems.forEach((item,i)=>{const col=i%3,row=Math.floor(i/3),x=260+col*190,y=1150+row*75;ctx.fillStyle="#fff";ctx.font="bold 34px Arial";ctx.fillText(String(item[1]),x,y);ctx.fillStyle=pair[1];ctx.font="bold 20px Arial";ctx.fillText(item[0],x,y+27);});
-  ctx.textAlign="right";ctx.font="22px Arial";ctx.fillStyle="#fff";ctx.fillText("#"+cardId+" • "+packNames[packType],790,1250);
+  const W = 900, H = 1300;
+  const canvas = createCanvas(W, H), ctx = canvas.getContext("2d");
+  const themes = {
+    bronze: ["#4b291b", "#a96a40", "#f2c18b"],
+    silver: ["#35414e", "#9aaab9", "#f1f5fa"],
+    gold: ["#4b3508", "#c79b27", "#ffe89a"],
+    special: ["#211044", "#7046b7", "#d8bdff"],
+    promo: ["#063b43", "#087d83", "#8affef"]
+  };
+  const t = themes[player.rarity] || themes.bronze;
+  const cardPath = (x, y, w, h) => {
+    ctx.beginPath(); ctx.moveTo(x + 70, y); ctx.lineTo(x + w - 70, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + 70); ctx.lineTo(x + w, y + h - 70);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - 70, y + h); ctx.lineTo(x + 70, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - 70); ctx.lineTo(x, y + 70);
+    ctx.quadraticCurveTo(x, y, x + 70, y); ctx.closePath();
+  };
+
+  const bg = ctx.createLinearGradient(0, 0, W, H);
+  bg.addColorStop(0, "#080b16"); bg.addColorStop(0.5, "#1b2438"); bg.addColorStop(1, "#050711");
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+
+  ctx.save(); ctx.shadowColor = t[2]; ctx.shadowBlur = 38;
+  cardPath(42, 32, 816, 1236);
+  const foil = ctx.createLinearGradient(60, 20, 840, 1260);
+  foil.addColorStop(0, t[2]); foil.addColorStop(0.24, t[1]);
+  foil.addColorStop(0.52, t[0]); foil.addColorStop(0.8, t[1]); foil.addColorStop(1, t[2]);
+  ctx.fillStyle = foil; ctx.fill(); ctx.restore();
+
+  cardPath(58, 48, 784, 1204); ctx.fillStyle = "#101522"; ctx.fill();
+  ctx.save(); cardPath(66, 56, 768, 1188); ctx.clip();
+  for (let i = -900; i < 1500; i += 72) {
+    ctx.strokeStyle = "rgba(255,255,255,0.045)"; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(i, 55); ctx.lineTo(i + 1050, 1300); ctx.stroke();
+  }
+  const glow = ctx.createRadialGradient(460, 390, 20, 460, 390, 500);
+  glow.addColorStop(0, "rgba(255,255,255,0.13)"); glow.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = glow; ctx.fillRect(65, 55, 770, 900); ctx.restore();
+
+  ctx.textAlign = "center"; ctx.fillStyle = t[2]; ctx.font = "bold 26px Arial";
+  ctx.fillText("MLS GURU", 450, 112);
+  ctx.fillStyle = "rgba(255,255,255,0.72)"; ctx.font = "bold 18px Arial";
+  ctx.fillText(String(player.rarity || "BRONZE").toUpperCase() + " • ULTIMATE TEAM", 450, 145);
+
+  ctx.textAlign = "left"; ctx.fillStyle = t[2]; ctx.font = "bold 104px Arial";
+  ctx.fillText(String(player.rating), 105, 285);
+  ctx.font = "bold 30px Arial"; ctx.fillText(String(player.position).toUpperCase(), 112, 328);
+  ctx.strokeStyle = t[2]; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(108, 350); ctx.lineTo(218, 350); ctx.stroke();
+
+  const photo = await loadPlayerPhoto(player);
+  if (photo) {
+    ctx.save(); ctx.beginPath(); ctx.roundRect(245, 190, 545, 565, 22); ctx.clip();
+    drawCover(ctx, photo, 245, 190, 545, 565);
+    const shade = ctx.createLinearGradient(245, 570, 245, 755);
+    shade.addColorStop(0, "rgba(5,8,16,0)"); shade.addColorStop(1, "rgba(5,8,16,0.82)");
+    ctx.fillStyle = shade; ctx.fillRect(245, 570, 545, 185); ctx.restore();
+  } else {
+    ctx.fillStyle = "rgba(255,255,255,0.08)"; ctx.beginPath(); ctx.roundRect(245, 190, 545, 565, 22); ctx.fill();
+    ctx.textAlign = "center"; ctx.fillStyle = "#fff"; ctx.font = "bold 34px Arial"; ctx.fillText("PLAYER PHOTO", 517, 490);
+  }
+
+  ctx.textAlign = "left"; ctx.fillStyle = "#fff"; ctx.shadowColor = "#000"; ctx.shadowBlur = 12;
+  ctx.font = "bold 62px Arial"; ctx.fillText(String(player.name).toUpperCase().slice(0, 18), 108, 845);
+  ctx.shadowBlur = 0; ctx.fillStyle = t[2]; ctx.font = "bold 27px Arial";
+  ctx.fillText(String(player.club).toUpperCase().slice(0, 32), 112, 890);
+  ctx.strokeStyle = "rgba(255,255,255,0.28)"; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(108, 925); ctx.lineTo(792, 925); ctx.stroke();
+
+  const stats = [["PAC", player.pac ?? 0], ["SHO", player.sho ?? 0], ["PAS", player.pas ?? 0],
+    ["DRI", player.dri ?? 0], ["DEF", player.def ?? 0], ["PHY", player.phy ?? 0]];
+  const sx = 225, sy = 1000, dx = 225, dy = 116;
+  stats.forEach((item, i) => {
+    const x = sx + (i % 3) * dx, y = sy + Math.floor(i / 3) * dy;
+    ctx.textAlign = "center"; ctx.fillStyle = "#fff"; ctx.font = "bold 51px Arial";
+    ctx.fillText(String(item[1]), x, y);
+    ctx.fillStyle = t[2]; ctx.font = "bold 23px Arial"; ctx.fillText(item[0], x, y + 34);
+  });
+
+  // Keep pack name out of the card; the Discord message already identifies the pack.
+  ctx.strokeStyle = "rgba(255,255,255,0.22)"; ctx.beginPath(); ctx.moveTo(230, 1170); ctx.lineTo(670, 1170); ctx.stroke();
+  ctx.textAlign = "center"; ctx.fillStyle = "rgba(255,255,255,0.62)"; ctx.font = "bold 17px Arial";
+  ctx.fillText("MLS GURU  •  PLAYER CARD #" + cardId, 450, 1220);
   return canvas.toBuffer("image/png");
 }
 async function renderWalkoutGif(player) {
